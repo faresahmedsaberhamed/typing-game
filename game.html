@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Anti-Gravity Game</title>
+    <style>
+        :root {
+            --bg-color: #0d0e15;
+            --primary: #00f0ff;
+            --secondary: #ff00f0;
+            --correct: #39ff14;
+            --wrong: #ff003c;
+            --text: #ffffff;
+            --panel: rgba(25, 30, 45, 0.85);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            color: var(--text);
+        }
+
+        /* Stars Background */
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: #000;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.1; }
+            100% { opacity: 1; }
+        }
+
+        /* UI overlay (Game Header) */
+        .ui-header {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+
+        .score-board {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--primary);
+            min-width: 150px;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            margin: 0 40px;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .top-btn-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .icon-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px var(--primary);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        /* Game Area */
+        .game-area {
+            position: relative;
+            flex-grow: 1;
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .floating-word {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 54px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px #fff, 0 0 40px var(--primary);
+            white-space: nowrap;
+        }
+
+        .floating-word.correct {
+            color: var(--correct);
+            text-shadow: 0 0 20px var(--correct), 0 0 40px var(--correct);
+            transform: translateX(-50%) scale(1.3);
+            transition: all 0.3s;
+        }
+
+        .floating-word.wrong {
+            color: var(--wrong);
+            text-shadow: 0 0 20px var(--wrong), 0 0 40px var(--wrong);
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-52%, 0, 0); }
+            20%, 80% { transform: translate3d(-48%, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-54%, 0, 0); }
+            40%, 60% { transform: translate3d(-46%, 0, 0); }
+        }
+
+        .danger-line {
+            position: absolute;
+            top: 10%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,0,60,0.5) 10px, rgba(255,0,60,0.5) 20px);
+            box-shadow: 0 0 10px var(--wrong);
+        }
+
+        /* Particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Input Area */
+        .input-area {
+            position: relative;
+            z-index: 10;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(to top, rgba(0,0,0,0.95), transparent);
+        }
+
+        .message-box {
+            height: 30px;
+            margin-bottom: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--wrong);
+            text-shadow: 0 0 10px var(--wrong);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .input-form {
+            display: flex;
+            gap: 15px;
+        }
+
+        .word-input {
+            padding: 15px 25px;
+            font-size: 24px;
+            background: var(--panel);
+            border: 2px solid var(--primary);
+            border-radius: 30px;
+            color: white;
+            outline: none;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3) inset, 0 0 15px rgba(0, 240, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .word-input:focus {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.6) inset, 0 0 25px rgba(0, 240, 255, 0.6);
+            border-color: #fff;
+        }
+
+        .submit-btn {
+            padding: 15px 30px;
+            background: var(--primary);
+            border: none;
+            border-radius: 30px;
+            color: #000;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.9);
+            background: #fff;
+        }
+        
+        /* Overlays (Menu & Game Over & Learn) */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .overlay h1 {
+            font-size: 64px;
+            color: var(--primary);
+            text-shadow: 0 0 30px var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .overlay h2 {
+            font-size: 40px;
+            color: var(--secondary);
+            text-shadow: 0 0 20px var(--secondary);
+            margin-bottom: 20px;
+        }
+        
+        /* Menu Specific */
+        .menu-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            background: var(--panel);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
+            margin-bottom: 40px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
+        }
+
+        .menu-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .menu-group label {
+            font-size: 18px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .menu-group select {
+            padding: 12px;
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            transition: border 0.3s;
+        }
+        
+        .menu-group select:focus {
+            border-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background: var(--correct);
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(57, 255, 20, 0.6);
+            transition: all 0.3s;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.08);
+            background: #fff;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.9);
+        }
+
+        .learn-btn {
+            background: var(--secondary);
+            box-shadow: 0 0 30px rgba(255, 0, 240, 0.6);
+        }
+
+        /* Learn Table Overlay */
+        .table-container {
+            max-height: 55vh;
+            overflow-y: auto;
+            width: 80%;
+            max-width: 700px;
+            background: var(--panel);
+            border: 1px solid var(--primary);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+        }
+
+        .table-container::-webkit-scrollbar {
+            width: 10px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5); 
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--primary); 
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            font-size: 22px;
+        }
+
+        th {
+            color: var(--primary);
+            font-weight: bold;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            background: rgba(25, 30, 45, 0.95);
+            z-index: 2;
+        }
+
+        td {
+            color: #fff;
+        }
+        
+        tr:hover td {
+            background: rgba(0, 240, 255, 0.1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="stars" id="stars"></div>
+
+    <!-- UI HEADER -->
+    <div class="ui-header">
+        <div class="score-board">Score: <span id="score">0</span> / <span id="total-score">9</span></div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="top-btn-group">
+            <button class="icon-btn" id="header-menu-btn">Menu</button>
+            <button class="icon-btn" id="restart-btn">Restart</button>
+        </div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div class="game-area" id="game-area">
+        <div class="danger-line"></div>
+        <div class="floating-word" id="word-display" style="bottom: 0%"></div>
+    </div>
+
+    <!-- INPUT AREA -->
+    <div class="input-area" id="input-container">
+        <div class="message-box" id="message-box">Correct answer: </div>
+        <form class="input-form" id="input-form">
+            <input type="text" class="word-input" id="word-input" placeholder="Type translation here..." autocomplete="off">
+            <button type="submit" class="submit-btn">Fire</button>
+        </form>
+    </div>
+    
+    <!-- MAIN MENU OVERLAY -->
+    <div class="overlay" id="menu-overlay">
+        <h1>Lingua Gravity</h1>
+        <div class="menu-container">
+            <div class="menu-group">
+                <label>Show Language:</label>
+                <select id="source-lang">
+                    <option value="ar">Arabic (العربية)</option>
+                    <option value="en" selected>English</option>
+                    <option value="de">German (Deutsch)</option>
+                    <option value="ru">Russian (Русский)</option>
+                    <option value="ja">Japanese (日本語)</option>
+                    <option value="zh">Chinese (中文)</option>
+                    <option value="ko">Korean (한국어)</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Type Language:</label>
+                <select id="target-lang">
+                    <option value="de" selected>German (Deutsch)</option>
+                    <option value="en">English</option>
+                    <option value="ar">Arabic (العربية)</option>
+                    <option value="ru">Russian (Русский)</option>
+                    <option value="ja">Japanese (日本語)</option>
+                    <option value="zh">Chinese (中文)</option>
+                    <option value="ko">Korean (한국어)</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Category:</label>
+                <select id="category">
+                    <option value="words">Nouns / Words</option>
+                    <option value="verbs">Verbs</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Difficulty:</label>
+                <select id="difficulty">
+                    <option value="easy">Easy (Slow)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard (Fast!)</option>
+                </select>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button class="start-btn learn-btn" id="open-learn-btn">Learn Words</button>
+            <button class="start-btn" id="start-btn">Play Game</button>
+        </div>
+    </div>
+
+    <!-- LEARN OVERLAY -->
+    <div class="overlay" id="learn-overlay" style="display: none;">
+        <h2>Vocabulary Dictionary</h2>
+        <div class="table-container">
+            <table id="learn-table">
+                <thead>
+                    <tr>
+                        <th id="th-source">Source Name</th>
+                        <th id="th-target">Target Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <button class="start-btn" id="close-learn-btn" style="margin-top: 30px;">Back to Menu</button>
+    </div>
+
+    <!-- GAME OVER OVERLAY -->
+    <div class="overlay" id="game-over-overlay" style="display: none;">
+        <h1 id="game-over-title">Game Over</h1>
+        <p id="game-over-msg" style="font-size: 28px; margin-bottom: 30px;">Your score: 0/9</p>
+        <div class="btn-group">
+            <button class="start-btn icon-btn" id="go-menu-btn" style="background: transparent;">Menu</button>
+            <button class="start-btn" id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Multi-Language Dictionary
+        const dictionary = {
+            words: [
+                { ar: "فكرة", en: "idea", de: "idee", ru: "идея", ja: "アイデア", zh: "主意", ko: "아이디어" },
+                { ar: "مجلة", en: "magazine", de: "illustrierte", ru: "журнал", ja: "雑誌", zh: "杂志", ko: "잡지" },
+                { ar: "مزاج", en: "mood", de: "lust", ru: "настроение", ja: "気分", zh: "心情", ko: "기분" },
+                { ar: "رياضيات", en: "math", de: "matheaufgabe", ru: "математика", ja: "数学", zh: "数学", ko: "수학" },
+                { ar: "مدرس موسيقى", en: "music teacher", de: "musiklehrer", ru: "учитель музыки", ja: "音楽の先生", zh: "音乐老师", ko: "음악 선생님" },
+                { ar: "مدرسة موسيقى", en: "music school", de: "musikschule", ru: "музыкальная школа", ja: "音楽学校", zh: "音乐学校", ko: "음악 학교" },
+                { ar: "درجة", en: "grade", de: "note", ru: "оценка", ja: "成績", zh: "成绩", ko: "성적" },
+                { ar: "شخص", en: "person", de: "person", ru: "человек", ja: "人", zh: "人", ko: "사람" },
+                { ar: "هدوء", en: "quiet", de: "ruhe", ru: "тишина", ja: "静けさ", zh: "安静", ko: "고요" }
+            ],
+            verbs: [
+                { ar: "يلعب", en: "play", de: "spielen", ru: "играть", ja: "遊ぶ", zh: "玩", ko: "놀다" },
+                { ar: "يتعلم", en: "learn", de: "lernen", ru: "учить", ja: "学ぶ", zh: "学习", ko: "배우다" },
+                { ar: "يقرأ", en: "read", de: "lesen", ru: "читать", ja: "読む", zh: "读", ko: "읽다" },
+                { ar: "يكتب", en: "write", de: "schreiben", ru: "писать", ja: "書く", zh: "写", ko: "쓰다" },
+                { ar: "يأكل", en: "eat", de: "essen", ru: "есть", ja: "食べる", zh: "吃", ko: "먹다" },
+                { ar: "يشرب", en: "drink", de: "trinken", ru: "пить", ja: "飲む", zh: "喝", ko: "마시다" },
+                { ar: "ينام", en: "sleep", de: "schlafen", ru: "спать", ja: "寝る", zh: "睡觉", ko: "자다" },
+                { ar: "يركض", en: "run", de: "rennen", ru: "бегать", ja: "走る", zh: "跑", ko: "달리다" },
+                { ar: "يتحدث", en: "speak", de: "sprechen", ru: "говорить", ja: "話す", zh: "说", ko: "말하다" }
+            ]
+        };
+
+        const langCodes = {
+            ar: 'ar-SA',
+            en: 'en-US',
+            de: 'de-DE',
+            ru: 'ru-RU',
+            ja: 'ja-JP',
+            zh: 'zh-CN',
+            ko: 'ko-KR'
+        };
+
+        // Star Background Generation
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.width = `${Math.random() * 3}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDuration = `${Math.random() * 3 + 1}s`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
+
+        // Web Audio API Context
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.15);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        function speakWord(word, langVal) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(word);
+                msg.lang = langCodes[langVal] || 'en-US';
+                msg.rate = 0.85;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        // Particle System
+        function createExplosion(x, y) {
+            const gameArea = document.getElementById('game-area');
+            const colors = ['#39ff14', '#00f0ff', '#ffffff'];
+            
+            for (let i = 0; i < 40; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 10 + 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.boxShadow = `0 0 10px ${particle.style.background}`;
+                
+                gameArea.appendChild(particle);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 120 + 50;
+                const dx = Math.cos(angle) * velocity;
+                const dy = Math.sin(angle) * velocity;
+                
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${dx}px, ${dy}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 600 + Math.random() * 500,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        // Game State Variables
+        let currentWords = [];
+        let currentWordIndex = 0;
+        let score = 0;
+        let gameLoopId;
+        let wordPos = 0; // percentage from bottom
+        let wordSpeed = 0.05;
+        let baseSpeed = 0.05;
+        let isPaused = false;
+        let allowInput = false;
+
+        // Selections
+        let sourceLang = 'en';
+        let targetLang = 'de';
+        let currentCategory = 'words';
+
+        // UI Elements
+        const wordDisplay = document.getElementById('word-display');
+        const wordInput = document.getElementById('word-input');
+        const inputForm = document.getElementById('input-form');
+        const scoreDisplay = document.getElementById('score');
+        const totalScoreDisplay = document.getElementById('total-score');
+        const progressBar = document.getElementById('progress-bar');
+        const messageBox = document.getElementById('message-box');
+        const gameArea = document.getElementById('game-area');
+
+        // Overlays & Buttons
+        const menuOverlay = document.getElementById('menu-overlay');
+        const learnOverlay = document.getElementById('learn-overlay');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        
+        const openLearnBtn = document.getElementById('open-learn-btn');
+        const closeLearnBtn = document.getElementById('close-learn-btn');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const headerMenuBtn = document.getElementById('header-menu-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const goMenuBtn = document.getElementById('go-menu-btn');
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex > 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function getOptions() {
+            sourceLang = document.getElementById('source-lang').value;
+            targetLang = document.getElementById('target-lang').value;
+            currentCategory = document.getElementById('category').value;
+            
+            const diff = document.getElementById('difficulty').value;
+            if (diff === 'easy') baseSpeed = 0.02;     // very slow
+            if (diff === 'normal') baseSpeed = 0.055;  // normal
+            if (diff === 'hard') baseSpeed = 0.12;     // fast
+        }
+
+        // --- Learn Section ---
+        openLearnBtn.addEventListener('click', () => {
+            getOptions();
+            
+            const sourceOptionText = document.querySelector(`#source-lang option[value="${sourceLang}"]`).text;
+            const targetOptionText = document.querySelector(`#target-lang option[value="${targetLang}"]`).text;
+
+            document.getElementById('th-source').textContent = sourceOptionText;
+            document.getElementById('th-target').textContent = targetOptionText;
+
+            const tbody = document.querySelector('#learn-table tbody');
+            tbody.innerHTML = '';
+
+            const dict = dictionary[currentCategory];
+            dict.forEach(item => {
+                const tr = document.createElement('tr');
+                const tdSource = document.createElement('td');
+                const tdTarget = document.createElement('td');
+                
+                tdSource.textContent = item[sourceLang];
+                tdTarget.textContent = item[targetLang];
+                
+                tr.appendChild(tdSource);
+                tr.appendChild(tdTarget);
+                tbody.appendChild(tr);
+            });
+
+            menuOverlay.style.display = 'none';
+            learnOverlay.style.display = 'flex';
+        });
+
+        closeLearnBtn.addEventListener('click', () => {
+            learnOverlay.style.display = 'none';
+            menuOverlay.style.display = 'flex';
+        });
+
+        // --- Game Logic ---
+        function startGame() {
+            initAudio();
+            getOptions();
+
+            if (sourceLang === targetLang) {
+                alert("Please select different languages for Show and Type!");
+                return;
+            }
+
+            const rawDict = dictionary[currentCategory];
+            currentWords = shuffle(rawDict.map(item => ({
+                source: item[sourceLang],
+                target: item[targetLang]
+            })));
+
+            totalScoreDisplay.textContent = currentWords.length;
+            
+            currentWordIndex = 0;
+            score = 0;
+            scoreDisplay.textContent = score;
+            messageBox.style.opacity = 0;
+            
+            menuOverlay.style.display = 'none';
+            gameOverOverlay.style.display = 'none';
+            learnOverlay.style.display = 'none';
+            
+            cancelAnimationFrame(gameLoopId);
+            gameLoop();
+            spawnWord();
+        }
+
+        function spawnWord() {
+            if (currentWordIndex >= currentWords.length) {
+                endGame(true);
+                return;
+            }
+            
+            wordPos = 0;
+            const currentObj = currentWords[currentWordIndex];
+            wordDisplay.textContent = currentObj.source;
+            wordDisplay.className = 'floating-word';
+            wordDisplay.style.bottom = `${wordPos}%`;
+            
+            // Adjust speed slightly over time
+            wordSpeed = baseSpeed + (currentWordIndex * 0.003);
+            
+            speakWord(currentObj.source, sourceLang);
+            isPaused = false;
+            allowInput = true;
+            wordInput.value = '';
+            
+            // Focus fix
+            setTimeout(() => { wordInput.focus(); }, 10);
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const prog = (currentWordIndex / currentWords.length) * 100;
+            progressBar.style.width = `${prog}%`;
+        }
+
+        function gameLoop() {
+            if (!isPaused) {
+                wordPos += wordSpeed;
+                wordDisplay.style.bottom = `${wordPos}%`;
+                
+                // Reached the danger line (top 10% from top -> bottom 90%)
+                if (wordPos >= 90) {
+                    handleWrongAnswer("Time's up!");
+                }
+            }
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function handleWrongAnswer(reason) {
+            isPaused = true;
+            allowInput = false;
+            playSound('wrong');
+            wordDisplay.classList.add('wrong');
+            
+            const currentObj = currentWords[currentWordIndex];
+            messageBox.textContent = `${reason} Solution: ${currentObj.target}`;
+            messageBox.style.opacity = 1;
+
+            setTimeout(() => {
+                wordDisplay.classList.remove('wrong');
+                messageBox.style.opacity = 0;
+                
+                // Retry same word, reset position
+                wordPos = 0;
+                isPaused = false;
+                allowInput = true;
+                wordInput.value = '';
+                wordInput.focus();
+            }, 3000);
+        }
+
+        function handleCorrectAnswer() {
+            isPaused = true;
+            allowInput = false;
+            playSound('correct');
+            wordDisplay.classList.add('correct');
+            score++;
+            scoreDisplay.textContent = score;
+
+            const rect = wordDisplay.getBoundingClientRect();
+            const areaRect = gameArea.getBoundingClientRect();
+            createExplosion(rect.left - areaRect.left + rect.width / 2, rect.top - areaRect.top + rect.height / 2);
+
+            setTimeout(() => {
+                wordDisplay.classList.remove('correct');
+                currentWordIndex++;
+                spawnWord();
+            }, 800);
+        }
+
+        inputForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!allowInput || isPaused) return;
+
+            const typed = wordInput.value.trim().toLowerCase();
+            const correctTarget = currentWords[currentWordIndex].target.toLowerCase();
+
+            if (typed === correctTarget) {
+                handleCorrectAnswer();
+            } else {
+                handleWrongAnswer("Missed!");
+            }
+        });
+
+        function endGame(won) {
+            cancelAnimationFrame(gameLoopId);
+            isPaused = true;
+            allowInput = false;
+            updateProgress(); 
+            
+            gameOverOverlay.style.display = 'flex';
+            const gameOverTitle = document.getElementById('game-over-title');
+            
+            if (won) {
+                gameOverTitle.textContent = "Mission Accomplished!";
+                gameOverTitle.style.color = "var(--correct)";
+                gameOverTitle.style.textShadow = "0 0 30px var(--correct)";
+            } else {
+                gameOverTitle.textContent = "Game Over";
+                gameOverTitle.style.color = "var(--wrong)";
+                gameOverTitle.style.textShadow = "0 0 30px var(--wrong)";
+            }
+            document.getElementById('game-over-msg').textContent = `Final Score: ${score} / ${currentWords.length}`;
+        }
+
+        function openMainMenu() {
+            cancelAnimationFrame(gameLoopId);
+            isPaused = true;
+            allowInput = false;
+            gameOverOverlay.style.display = 'none';
+            learnOverlay.style.display = 'none';
+            menuOverlay.style.display = 'flex';
+        }
+
+        // Buttons listeners
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        playAgainBtn.addEventListener('click', startGame);
+        headerMenuBtn.addEventListener('click', openMainMenu);
+        goMenuBtn.addEventListener('click', openMainMenu);
+
+        // Keep input focused
+        document.body.addEventListener('click', () => {
+            if (allowInput && menuOverlay.style.display === 'none') {
+                wordInput.focus();
+            }
+        });
+
+    </script>
+</body>
+</html>

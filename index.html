@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lingua Gravity Ultra</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Press+Start+2P&family=Share+Tech+Mono&family=Amiri:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body data-theme="space">
+
+    <div class="background-effects" id="bg-effects"></div>
+
+    <!-- MAIN APP NAVIGATION -->
+    <nav class="main-nav" id="main-nav">
+        <div class="nav-logo">Lingua Gravity Ultra</div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active">Languages</a>
+            <a href="social_studies.html" class="nav-link">Social Studies (دراسات اجتماعية)</a>
+            <a href="#" class="nav-link future-link" title="Coming Soon">Future Subjects</a>
+        </div>
+    </nav>
+
+    <!-- UI HEADER -->
+    <div class="ui-header" id="ui-header">
+        <div class="player-stats">
+            <div class="rank-badge" id="player-rank">Noob</div>
+            <div class="level-info">Level <span id="player-level">1</span></div>
+            <div class="exp-container">
+                <div class="exp-bar rainbow-hotbar" id="exp-bar"></div>
+            </div>
+        </div>
+
+        <div class="score-board">
+            <div id="time-display" style="display: none; color: var(--wrong); font-size: 28px; animation: pulse 1s infinite; margin-bottom: 5px;">01:00</div>
+            <div>Score: <span id="score">0</span> / <span id="target-score">10</span></div>
+            <div class="coins-display">💰 <span id="coins">0</span> | 🔥 <span id="streak-display">0</span></div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="top-btn-group">
+            <button class="icon-btn" id="bgm-toggle-btn">🎵 Music: OFF</button>
+            <button class="icon-btn" id="header-menu-btn">Menu</button>
+            <button class="icon-btn" id="restart-btn">Restart</button>
+        </div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div class="game-area" id="game-area">
+        <div class="danger-line"></div>
+        <div class="floating-word" id="word-display" style="bottom: 0%"></div>
+    </div>
+
+    <!-- INPUT AREA -->
+    <div class="input-area" id="input-container">
+        <div class="message-box" id="message-box">Correct answer: </div>
+        
+        <!-- Typing Mode Form -->
+        <form class="input-form" id="input-form">
+            <input type="text" class="word-input" id="word-input" placeholder="Type translation here..." autocomplete="off">
+            <button type="submit" class="submit-btn" id="fire-btn">Fire</button>
+        </form>
+
+        <!-- Multiple Choice Mode Options (Hidden by Default) -->
+        <div class="mc-options-container" id="mc-options-container" style="display: none;">
+            <button class="mc-btn" id="mc-btn-0"></button>
+            <button class="mc-btn" id="mc-btn-1"></button>
+            <button class="mc-btn" id="mc-btn-2"></button>
+            <button class="mc-btn" id="mc-btn-3"></button>
+        </div>
+
+        <!-- Flashcard Mode Form (Hidden by Default) -->
+        <div class="flashcard-container" id="flashcard-container" style="display: none; flex-direction: column; align-items: center; gap: 15px; width: 100%;">
+            <button class="submit-btn" id="fc-reveal-btn" style="background: var(--secondary); width: 250px;">Reveal Answer</button>
+            <div id="fc-answer-actions" style="display: none; gap: 15px;">
+                <button class="submit-btn" id="fc-wrong-btn" style="background: var(--wrong); width: 180px;">Didn't Know ❌</button>
+                <button class="submit-btn" id="fc-correct-btn" style="background: var(--correct); color: var(--bg-color); width: 180px;">Knew It! ✅</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MAIN MENU OVERLAY -->
+    <div class="overlay" id="menu-overlay">
+        <h1 class="main-title">Lingua Gravity Ultra</h1>
+        
+        <div class="menu-tabs">
+            <button class="tab-btn active" data-tab="play-tab">Play</button>
+            <button class="tab-btn" data-tab="ai-tab">AI Generator</button>
+            <button class="tab-btn" id="open-achievements-btn">🏅 Achievements</button>
+            <button class="tab-btn" id="open-tree-btn">🌳 Learn Tree</button>
+        </div>
+
+        <div class="menu-container tab-content active" id="play-tab">
+            <div class="menu-group">
+                <label>Show Language:</label>
+                <select id="source-lang">
+                    <option value="en" selected>🇬🇧 English</option>
+                    <option value="de">🇩🇪 German</option>
+                    <option value="ar">🌍 Arabic (العربية)</option>
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="zh">🇨🇳 Chinese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="it">🇮🇹 Italian</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Type Language:</label>
+                <select id="target-lang">
+                    <option value="de" selected>🇩🇪 German</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ar">🌍 Arabic (العربية)</option>
+                    <option value="ru">🇷🇺 Russian</option>
+                    <option value="ja">🇯🇵 Japanese</option>
+                    <option value="zh">🇨🇳 Chinese</option>
+                    <option value="ko">🇰🇷 Korean</option>
+                    <option value="es">🇪🇸 Spanish</option>
+                    <option value="fr">🇫🇷 French</option>
+                    <option value="it">🇮🇹 Italian</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Category:</label>
+                <select id="category">
+                    <option value="words" selected>🎒 Nouns / Words</option>
+                    <option value="verbs">🏃 Verbs</option>
+                    <option value="adjectives">🎨 Adjectives</option>
+                    <option value="ai">🤖 AI Generated</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Game Mode:</label>
+                <select id="game-mode">
+                    <option value="typing" selected>⌨️ Type & Drop</option>
+                    <option value="mcq">🔘 Multiple Choice</option>
+                    <option value="listening">🎧 Listening (Type)</option>
+                    <option value="timeattack">⏱️ Time Attack (60s)</option>
+                    <option value="flashcards">📇 Flashcards</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Word Count:</label>
+                <select id="word-count">
+                    <option value="5">5 Words</option>
+                    <option value="10" selected>10 Words</option>
+                    <option value="20">20 Words</option>
+                    <option value="50">50 Words</option>
+                    <option value="all">All Available</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Difficulty:</label>
+                <select id="difficulty">
+                    <option value="easy">Easy (Slow)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard (Fast!)</option>
+                </select>
+            </div>
+            <div class="menu-group">
+                <label>Theme:</label>
+                <select id="theme-selector">
+                    <option value="space">🚀 Space Theme</option>
+                    <option value="hacker">💻 Hacker Theme</option>
+                    <option value="minecraft">⛏️ Minecraft</option>
+                    <option value="planet">🪐 Planet Theme</option>
+                    <option value="eid">🌙 Eid Theme</option>
+                    <option value="cyberspace">🌐 Cyber Space Grid</option>
+                    <option value="starship">🛸 Starship Control</option>
+                    <option value="amongus">ඞ Among Us</option>
+                    <option value="classroom">🏫 Classroom</option>
+                    <option value="neon">🌆 Neon Cyberpunk</option>
+                    <option value="retro8bit">🕹️ Retro 8-bit Arcade</option>
+                    <option value="egypt">🐪 Egypt</option>
+                    <option value="beach">🏖️ Beach</option>
+                    <option value="paris">🗼 Paris</option>
+                    <option value="tokyo">🗾 Tokyo</option>
+                    <option value="robot">🤖 Robot Factory</option>
+                    <option value="brain">🧠 Brain / Learning</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="menu-container tab-content" id="ai-tab" style="display: none;">
+            <div class="ai-generator">
+                <h2>AI Vocabulary Generator</h2>
+                <p>Generate more words securely via API</p>
+                <input type="password" id="api-key-input" placeholder="Enter standard API Key (e.g. Groq, OpenAI)" class="word-input" style="width: 80%; margin-bottom: 10px;">
+                <input type="text" id="api-url-input" placeholder="API Base URL (e.g. https://api.groq.com/openai/v1/chat/completions)" value="https://api.groq.com/openai/v1/chat/completions" class="word-input" style="width: 80%; margin-bottom: 20px;">
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <select id="ai-topic" class="word-input" style="width: 50%;">
+                        <option value="animals">Animals</option>
+                        <option value="food">Food</option>
+                        <option value="tech">Technology</option>
+                        <option value="nature">Nature</option>
+                        <option value="emotions">Emotions</option>
+                    </select>
+                    <button class="start-btn" id="generate-ai-btn" style="padding: 10px 20px; font-size: 16px;">Generate & Save</button>
+                </div>
+                <div id="ai-status" style="color: var(--primary);"></div>
+            </div>
+        </div>
+
+        <div class="btn-group" style="margin-top: 20px;">
+            <button class="start-btn learn-btn" id="open-learn-btn">📖 View Dictionary</button>
+            <button class="start-btn" id="start-btn">Play Game 🚀</button>
+        </div>
+    </div>
+
+    <!-- LEARN OVERLAY -->
+    <div class="overlay" id="learn-overlay" style="display: none;">
+        <h2>Vocabulary Dictionary</h2>
+        <p style="color: var(--primary); margin-bottom: 15px; font-weight: bold;">Click any row to study the spelling!</p>
+        <div class="table-container">
+            <table id="learn-table">
+                <thead>
+                    <tr>
+                        <th id="th-source">Source Name</th>
+                        <th id="th-target">Target Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <button class="start-btn" id="close-learn-btn" style="margin-top: 30px;">Back to Menu</button>
+    </div>
+
+    <!-- WORD STUDY VIEWER OVERLAY -->
+    <div class="overlay" id="study-overlay" style="display: none; z-index: 105;">
+        <div class="study-box">
+            <h2 id="study-title" style="margin-bottom: 10px; font-size: 50px;">Learning</h2>
+            <h3 id="study-translation" style="color: var(--text); font-family: var(--font-main); margin-bottom: 40px; font-size: 24px;"></h3>
+            
+            <div class="spelling-container" id="spelling-container">
+                <!-- Letters dynamically placed here -->
+            </div>
+            
+            <div class="btn-group" style="margin-top: 50px;">
+                <button class="start-btn learn-btn" id="replay-study-btn" style="font-size: 18px; padding: 15px 30px;">🔊 Replay Audio</button>
+                <button class="start-btn icon-btn" id="close-study-btn" style="background: var(--bg-color); font-size: 18px;">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ACHIEVEMENTS OVERLAY -->
+    <div class="overlay" id="achievements-overlay" style="display: none;">
+        <h2>🏆 Achievements (0/50)</h2>
+        <div class="achievements-grid" id="achievements-grid">
+            <!-- Populated dynamically -->
+        </div>
+        <button class="start-btn" id="close-achievements-btn" style="margin-top: 30px;">Back</button>
+    </div>
+
+    <!-- LEARNING TREE OVERLAY -->
+    <div class="overlay" id="tree-overlay" style="display: none;">
+        <h2>🌳 Tree of Knowledge</h2>
+        <p>Your mastery of words</p>
+        <div class="tree-container" id="tree-container">
+            <!-- Populated dynamically -->
+        </div>
+        <button class="start-btn" id="close-tree-btn" style="margin-top: 30px;">Back</button>
+    </div>
+
+    <!-- GAME OVER OVERLAY -->
+    <div class="overlay" id="game-over-overlay" style="display: none;">
+        <h1 id="game-over-title">Game Over</h1>
+        <p id="game-over-msg" style="font-size: 28px; margin-bottom: 10px;">Your score: 0/10</p>
+        <p id="game-over-exp" style="font-size: 20px; color: var(--primary); margin-bottom: 10px;">+0 EXP</p>
+        <p id="game-over-coins" style="font-size: 24px; color: gold; margin-bottom: 20px;">+0 Coins earned!</p>
+        
+        <div id="level-up-msg" style="display: none; color: var(--correct); font-size: 32px; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 20px var(--correct); animation: shake 0.5s;">LEVEL UP!</div>
+
+        <div class="achievement-unlock-tray" id="achievement-unlock-tray"></div>
+
+        <div class="btn-group">
+            <button class="start-btn icon-btn" id="go-menu-btn" style="background: var(--panel);">Menu</button>
+            <button class="start-btn" id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
